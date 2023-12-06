@@ -33,19 +33,14 @@ from __future__ import annotations
 import logging
 
 import pandas as pd
-
+from datatools.core.dtype_cast import maybe_make_list, normalize_dtypes
+from datatools.pandas_register import register_dataframe_method
 # noinspection PyProtectedMember
-from pandas._typing import FrameOrSeriesUnion
-from pandas._typing import IndexLabel
-from pandas._typing import Suffixes
+from pandas._typing import FrameOrSeriesUnion, IndexLabel, Suffixes
 from pandas.core.common import maybe_make_list
 from pandas.errors import MergeError
 from supply.dev.lp_model import engine
 from varname import argname
-
-from datatools.core.dtype_cast import maybe_make_list
-from datatools.core.dtype_cast import normalize_dtypes
-from datatools.pandas_register import register_dataframe_method
 
 
 @register_dataframe_method
@@ -70,9 +65,8 @@ def to_sqlite(
                 "to be used instead.",
                 table_name,
             )
-        logging.info(
-            "Saving %s to sqlite database. Total rows: %s", table_name, df.shape[0]
-        )
+        logging.info("Saving %s to sqlite database. Total rows: %s",
+                     table_name, df.shape[0])
         df = df.apply(lambda col: col.dt.date if hasattr(col, "dt") else col)
         df.to_sql(
             table_name,
@@ -229,8 +223,7 @@ def safe_merge(
         if any([left_on, right_on]):
             MergeError(
                 'Can only pass argument "on" OR "left_on" and "right_on", '
-                "not a combination of both."
-            )
+                "not a combination of both.")
         left_on = right_on = on
     if left_on is not None and right_on is not None:
         left_on, right_on = maybe_make_list(left_on), maybe_make_list(right_on)
@@ -250,7 +243,8 @@ def safe_merge(
             validate = get_validation_relationship(how)
 
         if validate:
-            left, right = eval_validation(left, right, left_on, right_on, validate)
+            left, right = eval_validation(left, right, left_on, right_on,
+                                          validate)
 
         return left.merge(
             right,
