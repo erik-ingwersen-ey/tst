@@ -29,27 +29,18 @@ from __future__ import annotations
 import difflib
 import logging
 import re
-
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Union
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Union
 
 import numpy as np
 import pandas as pd
-
+from datatools.core.dtype_cast import iterable_not_string
+from datatools.pandas_register import register_dataframe_method
 from multipledispatch import dispatch
 from pandas._typing import Axes
 from pandas.util._decorators import doc
 from varname import argname
-
-from datatools.core.dtype_cast import iterable_not_string
-from datatools.pandas_register import register_dataframe_method
-
 
 if TYPE_CHECKING:
     pass
@@ -149,27 +140,13 @@ def clean_names(
     else:
         raise TypeError(
             "Invalid x_df type. Function supports dataframes, strings or "
-            f"iterable objects, not {type(x_df)}"
-        )
+            f"iterable objects, not {type(x_df)}")
     column_maps = {
-        col: (
-            str(col)
-            .lower()
-            .replace(" ", "_")
-            .replace("  ", "_")
-            .replace("(", "")
-            .replace(")", "")
-            .replace("$", "")
-            .replace("/", "_")
-            .replace("?", "")
-            .replace("+", "_")
-            .replace("__", "_")
-            .replace("-", "_")
-            .replace("\t", "_")
-            .replace("\n", "_")
-        )
-        if not str(col).isnumeric()
-        else col
+        col: (str(col).lower().replace(" ", "_").replace("  ", "_").replace(
+            "(", "").replace(")", "").replace("$", "").replace(
+                "/", "_").replace("?", "").replace("+", "_").replace(
+                    "__", "_").replace("-", "_").replace("\t", "_").replace(
+                        "\n", "_")) if not str(col).isnumeric() else col
         for col in column_names
     }
 
@@ -228,10 +205,14 @@ def num_cols(
     numeric_cols = [col for col in df.columns if str(col).isnumeric()]
 
     if min_value:
-        numeric_cols = [col for col in numeric_cols if int(col) >= int(min_value)]
+        numeric_cols = [
+            col for col in numeric_cols if int(col) >= int(min_value)
+        ]
 
     if max_value:
-        numeric_cols = [col for col in numeric_cols if int(col) <= int(max_value)]
+        numeric_cols = [
+            col for col in numeric_cols if int(col) <= int(max_value)
+        ]
 
     numeric_cols = sorted(numeric_cols)
 
@@ -297,15 +278,12 @@ def moving_average(
         Dataframe with added column
     """
     group_cols = list(
-        set([group_cols] if isinstance(group_cols, str) else group_cols) - {week_col}
-    )
+        set([group_cols] if isinstance(group_cols, str) else group_cols) -
+        {week_col})
     assert len(group_cols) > 0
-    df[colname] = (
-        df.sort_values(group_cols)
-        .iloc[::-1]
-        .groupby(group_cols, as_index=False)[var_col]
-        .transform(lambda x: x.rolling(window=periods).mean())[var_col]
-    )
+    df[colname] = (df.sort_values(group_cols).iloc[::-1].groupby(
+        group_cols, as_index=False)[var_col].transform(
+            lambda x: x.rolling(window=periods).mean())[var_col])
     return df
 
 
@@ -395,10 +373,8 @@ def new_col(
         Dataframe with the added column.
     """
     if if_exists not in ["replace", "skip"]:
-        logging.warning(
-            f"{if_exists} is not a valid option for argument "
-            'if_exists. Defaulting to "replace"'
-        )
+        logging.warning(f"{if_exists} is not a valid option for argument "
+                        'if_exists. Defaulting to "replace"')
         if_exists = "replace"
 
     if colname not in df.columns or if_exists == "replace":
@@ -406,9 +382,8 @@ def new_col(
     return df
 
 
-def new_cols(
-    df: pd.DataFrame, colnames: list[str], value: Any, **kwargs: Any
-) -> pd.DataFrame:
+def new_cols(df: pd.DataFrame, colnames: list[str], value: Any,
+             **kwargs: Any) -> pd.DataFrame:
     """
     Add new columns to DataFrame with a constant value.
 
@@ -513,9 +488,9 @@ def multiply(
     """
     var_cols = [var_cols] if isinstance(var_cols, str) else var_cols
     _var_cols = [col for col in var_cols if col in df.columns]
-    df.loc[:, _var_cols] = (
-        df.loc[:, _var_cols].multiply(df.loc[:, scalar_col], axis=0).round(decimals)
-    )
+    df.loc[:, _var_cols] = (df.loc[:,
+                                   _var_cols].multiply(df.loc[:, scalar_col],
+                                                       axis=0).round(decimals))
     return df
 
 
@@ -545,8 +520,7 @@ def group_percentage(
         The dataframe with the proportional values
     """
     df[col_names] = df.groupby(group_cols)[var_cols].transform(
-        lambda x: x / float(x.sum())
-    )
+        lambda x: x / float(x.sum()))
     return df
 
 
@@ -642,7 +616,8 @@ def get_df_name(df_to_find_name: pd.DataFrame) -> str:
     Optional[str]
         The name of the dataframe, if it exists.
     """
-    if isinstance(df_to_find_name, pd.DataFrame) and "name" in df_to_find_name.attrs:
+    if isinstance(df_to_find_name,
+                  pd.DataFrame) and "name" in df_to_find_name.attrs:
         return df_to_find_name.attrs["name"]
     return argname("df_to_find_name")
 
@@ -691,7 +666,8 @@ def save_to_db(
         logging.critical(error)
 
     except Exception as error:
-        logging.critical(f"Could not save {name} to database. Error message: {error}")
+        logging.critical(
+            f"Could not save {name} to database. Error message: {error}")
     return df
 
 
@@ -776,9 +752,8 @@ def get_numeric_cols(_df: pd.DataFrame) -> list[str]:
     raise IndexError(f"No numeric column found. Columns: {_df.columns}")
 
 
-def round_numeric_columns(
-    df: pd.DataFrame | pd.Series, n: int = 2
-) -> pd.DataFrame | pd.Series:
+def round_numeric_columns(df: pd.DataFrame | pd.Series,
+                          n: int = 2) -> pd.DataFrame | pd.Series:
     """
     Round numeric columns to “n“ decimal places.
 
@@ -796,15 +771,8 @@ def round_numeric_columns(
         Dataframe or pandas series, with rounded numeric column(s).
     """
     if isinstance(df, pd.Series):
-        return (
-            df.fillna(-1)
-            .apply(
-                lambda x: int(x)
-                if n == 0 and not pd.isna(x) or x == ""
-                else round(x, n)
-            )
-            .replace(-1, "")
-        )
+        return (df.fillna(-1).apply(lambda x: int(x) if n == 0 and not pd.isna(
+            x) or x == "" else round(x, n)).replace(-1, ""))
     numeric_cols = df.select_dtypes(include=["number"]).columns
     df[numeric_cols] = df[numeric_cols].apply(lambda x: round(x, n))
     return df
@@ -848,7 +816,8 @@ def optimize_floats(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def optimize_objects(df: pd.DataFrame, datetime_features: list[str]) -> pd.DataFrame:
+def optimize_objects(df: pd.DataFrame,
+                     datetime_features: list[str]) -> pd.DataFrame:
     """
     Convert object columns to optimize memory usage of a pandas DataFrame.
 
@@ -893,7 +862,8 @@ def optimize(df: pd.DataFrame, datetime_features=None):
     """
     if datetime_features is None:
         datetime_features = []
-    return optimize_floats(optimize_ints(optimize_objects(df, datetime_features)))
+    return optimize_floats(
+        optimize_ints(optimize_objects(df, datetime_features)))
 
 
 def update_bo_remaining(df: pd.DataFrame) -> pd.DataFrame:
@@ -929,15 +899,15 @@ def update_bo_remaining(df: pd.DataFrame) -> pd.DataFrame:
     4  B              4       4
     5  B              4       4
     """
-    df["bo_remaining"] = df["bo_qty"] = df.groupby("so")["bo_remaining"].transform(
-        lambda x: x.min()
-    )
+    df["bo_remaining"] = df["bo_qty"] = df.groupby(
+        "so")["bo_remaining"].transform(lambda x: x.min())
     return df
 
 
-def drop_duplicates_and_log(
-    df: pd.DataFrame, custom_message: str = "", *args, **kwargs
-):
+def drop_duplicates_and_log(df: pd.DataFrame,
+                            custom_message: str = "",
+                            *args,
+                            **kwargs):
     """
     Drop duplicates and log the number of duplicates removed.
 
@@ -981,24 +951,17 @@ def drop_duplicates_and_log(
 
     if num_duplicates > 0:
         if custom_message:
-            custom_message += (
-                ". "
-                if not any(
-                    [
-                        custom_message.endswith(". "),
-                        custom_message.endswith("."),
-                    ]
-                )
-                else ""
-            )
+            custom_message += (". " if not any([
+                custom_message.endswith(". "),
+                custom_message.endswith("."),
+            ]) else "")
         try:
             name = get_df_name(df)
         except (ValueError, Exception):
             name = "dataframe"
         logging.warning(
             f"{custom_message}Dropped {num_duplicates:,} duplicates from"
-            f" {name} (Percentual {100 * num_duplicates / num_rows:.2f}%)"
-        )
+            f" {name} (Percentual {100 * num_duplicates / num_rows:.2f}%)")
     return df
 
 
@@ -1014,7 +977,10 @@ def drop_dup_and_log(
     """Pandas dataframe accessor for method :func:`drop_duplicates_and_log`."""
     if name:
         df.attrs["name"] = str(name)
-    return drop_duplicates_and_log(df, *args, custom_message=custom_message, **kwargs)
+    return drop_duplicates_and_log(df,
+                                   *args,
+                                   custom_message=custom_message,
+                                   **kwargs)
 
 
 @doc(pd.DataFrame.dropna)
@@ -1068,9 +1034,10 @@ def _drop_na_and_log(
     return df
 
 
-def log_dropped_nan_values(
-    num_na: int, num_rows: int, name: str = "df", custom_message: str = ""
-) -> None:
+def log_dropped_nan_values(num_na: int,
+                           num_rows: int,
+                           name: str = "df",
+                           custom_message: str = "") -> None:
     """
     Logs the number of rows removed due to NaN values.
 
@@ -1088,20 +1055,12 @@ def log_dropped_nan_values(
         A custom message to be logged. Defaults to ''
     """
     if custom_message:
-        custom_message += (
-            ". "
-            if not any(
-                [
-                    custom_message.endswith(". "),
-                    custom_message.endswith("."),
-                ]
-            )
-            else ""
-        )
-    logging.warning(
-        f"{custom_message}Dropped {num_na:,} rows with NaN values "
-        f"from {name} (Percentual {100 * num_na / num_rows:.2f}%)"
-    )
+        custom_message += (". " if not any([
+            custom_message.endswith(". "),
+            custom_message.endswith("."),
+        ]) else "")
+    logging.warning(f"{custom_message}Dropped {num_na:,} rows with NaN values "
+                    f"from {name} (Percentual {100 * num_na / num_rows:.2f}%)")
 
 
 class FuzzyMatch:
@@ -1122,15 +1081,14 @@ class FuzzyMatch:
     def return_type(self, value: str):
         if value not in self._return_types:
             raise ValueError(
-                "%s is not a valid option. Valid options: %s"
-                % value
-                % ", ".join(str(option) for option in self._return_types)
-            )
+                "%s is not a valid option. Valid options: %s" % value %
+                ", ".join(str(option) for option in self._return_types))
         self._return_type = value
 
-    def match(
-        self, possible_vals: Iterable, value: str, _return_type: str = None
-    ) -> Any:
+    def match(self,
+              possible_vals: Iterable,
+              value: str,
+              _return_type: str = None) -> Any:
         """
         Performs a fuzzy match on the possible values.
 
@@ -1157,20 +1115,22 @@ class FuzzyMatch:
             map(
                 lambda x: _possible_vals[x],
                 difflib.get_close_matches(value, list(_possible_vals.keys())),
-            )
-        )
+            ))
         try:
             return self.return_type(_value)
         except IndexError as error:
-            logging.exception(
-                error, extra={"value": value, "possible_vals": possible_vals}
-            )
+            logging.exception(error,
+                              extra={
+                                  "value": value,
+                                  "possible_vals": possible_vals
+                              })
             raise IndexError(
-                f'Could not find match for "<{value}>" at {possible_vals}',
-            )
+                f'Could not find match for "<{value}>" at {possible_vals}', )
 
 
-def fuzzy_match(possible_vals: Iterable, value: Any, return_type: str = "first") -> Any:
+def fuzzy_match(possible_vals: Iterable,
+                value: Any,
+                return_type: str = "first") -> Any:
     """
     Fuzzy match a value to a list of possible values
 
@@ -1405,7 +1365,9 @@ def _read_csv(_filepath: Path) -> pd.DataFrame:
     return df
 
 
-def _prepare_df(df: pd.DataFrame, log: bool = True, name: str = "") -> pd.DataFrame:
+def _prepare_df(df: pd.DataFrame,
+                log: bool = True,
+                name: str = "") -> pd.DataFrame:
     """
     Clean column names, and return a DataFrame.
 

@@ -29,8 +29,8 @@ from typing import Callable
 # Register decorators require versions of pandas >= 0.23.
 # Don't change the "requirements.txt" for pandas dataframe, otherwise,
 # import will raise ImportError!
-from pandas.api.extensions import register_dataframe_accessor
-from pandas.api.extensions import register_series_accessor
+from pandas.api.extensions import (register_dataframe_accessor,
+                                   register_series_accessor)
 
 
 def register_dataframe_method(method: Callable):
@@ -58,7 +58,9 @@ def register_dataframe_method(method: Callable):
     """
 
     def inner(*args, **kwargs):
+
         class AccessorMethod:
+
             def __init__(self, pandas_obj):
                 self._obj = pandas_obj
 
@@ -77,6 +79,7 @@ def register_series_method(method: Callable):
     """Register a function as a method attached to the Pandas Series."""
 
     def inner(*args, **kwargs):
+
         class AccessorMethod:
             __doc__ = method.__doc__
 
